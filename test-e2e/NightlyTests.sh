@@ -4,6 +4,9 @@
 # Author: dkoroth@google.com
 #
 
+#set -x 
+
+>>>>>>> Automated e2e tests for Nightly and PreSubmit scenarios - 135504847
 source ./testhelper.sh
 source ./testEMG.sh
 
