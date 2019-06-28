@@ -6,10 +6,42 @@ const debug = require('debug')('configure');
 const upgradekvm = require('./lib/upgrade-kvm')();
 const upgradeauth = require('./lib/upgrade-edgeauth')();
 const rotatekey = require('./lib/rotate-key')();
+const cert = require('./lib/cert')();
 
 var prompt = require('cli-prompt');
 
 module.exports = function() {
+   app
+    .command('cert-install')
+    .option('-o, --org <org>', 'the organization')
+    .option('-e, --env <env>', 'the environment')
+    .option('-t, --token <token>', 'OAuth token to use with management API')
+    .option('-u, --username <user>', 'username of the organization admin')
+    .option('-p, --password <password>', 'password of the organization admin')
+    .option('-f, --force', 'replace any existing keys')
+    .option('-m, --mgmt-url <mgmtUrl>', 'the URL of the management server')
+    .description('install a certificate for your organization')
+    .action((options) => {
+      options.error = optionError;
+      options.token = options.token || process.env.EDGEMICRO_SAML_TOKEN;
+      if (!options.mgmtUrl) {
+                return options.error('mgmtUrl is required');
+            }
+      if (options.token) {
+        if (!options.org) { return options.error('org is required'); }
+        if (!options.env) { return options.error('env is required'); }
+        cert.installCert(options);
+      } else {
+        if (!options.username) { return  options.error('username is required'); }
+        if (!options.org) { return  options.error('org is required'); }
+        if (!options.env) { return  options.error('env is required'); }
+        promptForPassword(options,(options)=>{
+          if (!options.password) { return  options.error('password is required'); }
+          cert.installCert(options)
+        });
+      }
+    });
+
     app
         .command('configure')
         .description('Automated, one-time setup of edgemicro with Apigee Private Cloud')
@@ -105,9 +137,6 @@ module.exports = function() {
             }
             if (!options.env) {
                 return options.error('env is required');
-            }
-            if (!options.runtimeUrl) {
-                return options.error('runtimeUrl is required');
             }
             if (!options.mgmtUrl) {
                 return options.error('mgmtUrl is required');
